@@ -5,11 +5,12 @@ import ChatListItem from '../components/ChatListItem';
 
 const ChatsScreen = () => {
   return (
-  <FlatList 
-    data={chats}
-    renderItem={({item}) => <ChatListItem chat={item} />}
+    <FlatList
+      data={chats}
+      renderItem={({ item }) => <ChatListItem chat={item} />}
+      style={{ backgroundColor: 'white' }}
     />
-    )
+  );
 };
 
 export default ChatsScreen;
