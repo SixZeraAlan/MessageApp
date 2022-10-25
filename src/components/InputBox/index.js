@@ -1,15 +1,37 @@
-import { useState } from 'react';
-import { View, StyleSheet, TextInput } from 'react-native';
-import { AntDesign, MaterialIcons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from "react";
+import { View, StyleSheet, TextInput } from "react-native";
+import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { API, graphqlOperation, Auth } from "aws-amplify";
+import { createMessage, updateChatRoom } from "../../graphql/mutations";
 
-const InputBox = () => {
-  const [newMessage, setNewMessage] = useState('');
+const InputBox = ({ chatroom }) => {
+  const [text, setText] = useState("");
 
-  const onSend = () => {
-    console.warn('Sending a new message: ', newMessage);
+  const onSend = async () => {
+    const authUser = await Auth.currentAuthenticatedUser();
+    const newMessage = {
+      chatroomID: chatroom.id,
+      text,
+      userID: authUser.attributes.sub,
+    };
 
-    setNewMessage('');
+    const newMessageData = await API.graphql(
+      graphqlOperation(createMessage, { input: newMessage })
+    );
+
+    setText("");
+
+    // set the new message as LastMessage of the ChatRoom
+    await API.graphql(
+      graphqlOperation(updateChatRoom, {
+        input: {
+          _version: chatroom._version,
+          chatRoomLastMessageId: newMessageData.data.createMessage.id,
+          id: chatroom.id,
+        },
+      })
+    );
   };
 
   return (
@@ -19,14 +41,20 @@ const InputBox = () => {
 
       {/* Text Input */}
       <TextInput
-        value={newMessage}
-        onChangeText={setNewMessage}
+        value={text}
+        onChangeText={setText}
         style={styles.input}
-        placeholder="type your message..."
+        placeholder="Type your message..."
       />
 
       {/* Icon */}
-      <MaterialIcons onPress={onSend} style={styles.send} name="send" size={16} color="white" />
+      <MaterialIcons
+        onPress={onSend}
+        style={styles.send}
+        name="send"
+        size={16}
+        color="white"
+      />
     </SafeAreaView>
   );
 };
